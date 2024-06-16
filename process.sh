@@ -85,9 +85,19 @@ monitor_task(){
     while $progressing 
     do
         str=$(tail -1 $logfilename)
+        if [[ $str == "[ExtractAudio]"* ]]; then
+            str=$(tail -2 $logfilename)
+        fi
+        if [[ $str == "Deleting original file"* ]]; then
+            str=$(tail -3 $logfilename)
+        fi
+        str=${str%[ExtractAudio*}
         lastreport=""
-        flatline=$(echo -n $str | yq -oj eval)
-        valid=$(is_valid_json  "$flatline")
+        flatline=$(echo -n $str | tr "'" '"' | tr -dc '[:print:]')
+        flatline=${flatline//None/'"None"'}
+        echo "flatline: $flatline"
+        # flatline=$(echo -n $flatline | jq)
+        valid=$(is_valid_json "$flatline")
         if  [[ "$valid" == "true" ]]; then
             lastreport=$flatline
         fi
@@ -157,7 +167,7 @@ do
         esac
 
         echo "Converting $SOURCE using preset $PRESET ..."
-        yt-dlp --restrict-filenames -P $OUTPUT_LOCATION --newline --progress-template "download:%(progress)s" $SOURCE ${AUDIO_QUALITY:+"--extract-audio --audio-format mp3 --audio-quality $AUDIO_QUALITY"} ${VIDEO_QUALITY:+"-S res:$VIDEO_QUALITY,codec,br,ext:mp4"}  > ${ID}_enc.log &
+        yt-dlp --restrict-filenames -P $OUTPUT_LOCATION --newline --progress-template "download:%(progress)s" $SOURCE ${AUDIO_QUALITY:+"--extract-audio"} ${AUDIO_QUALITY:+"--audio-format"} ${AUDIO_QUALITY:+"mp3"} ${AUDIO_QUALITY:+"--audio-quality"} ${AUDIO_QUALITY:+"$AUDIO_QUALITY"} ${VIDEO_QUALITY:+"--format"} ${VIDEO_QUALITY:+"(mp4)[height<=$VIDEO_QUALITY]"} > ${ID}_enc.log &
         monitor_task $TASK_TO_PROCESS ${ID}_enc.log &
         wait
     else
