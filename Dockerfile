@@ -1,10 +1,10 @@
 FROM ubuntu:24.04
 RUN apt-get update 
-RUN apt install software-properties-common ffmpeg curl yq jq procps bc -y
+RUN apt install ffmpeg curl yq jq procps bc -y
 
-RUN add-apt-repository ppa:tomtomtom/yt-dlp
-RUN apt-get update 
-RUN apt install yt-dlp -y
+# Install latest yt-dlp release binary directly (apt/PPA versions lag behind upstream releases)
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp
 
 VOLUME [ "/tasks", "/output"]
 RUN mkdir app
